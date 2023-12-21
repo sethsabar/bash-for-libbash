@@ -85,6 +85,7 @@ extern void subshell_exit PARAMS((int)) __attribute__((__noreturn__));
 extern void set_exit_status PARAMS((int));
 extern void disable_priv_mode PARAMS((void));
 extern void unbind_args PARAMS((void));
+extern int initialize_shell_libbash PARAMS((void)); // libbash - declare func
 
 #if defined (RESTRICTED_SHELL)
 extern int shell_is_restricted PARAMS((char *));

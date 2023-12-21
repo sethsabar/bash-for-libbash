@@ -834,6 +834,82 @@ main (argc, argv, env)
   exit_shell (last_command_exit_value);
 }
 
+// libbash - does the neccesary initialization for the shell
+// normally done in main()
+int initialize_shell_libbash(void)
+{
+    int code = setjmp_nosigs(top_level);
+    if (code)
+        return (EXECUTION_FAILURE);
+
+    set_default_locale();
+
+    // should we consider the user's environment?
+    if (getenv("POSIXLY_CORRECT") || getenv("POSIX_PEDANTIC"))
+        posixly_correct = 1;
+
+    set_shell_name("bash"); // turns out this is important - we replace argv[0] with bash, hopefully this works
+
+    init_noninteractive(); // don't think we need to worry about init_interactive
+
+    /* If we're in a strict Posix.2 mode, turn on interactive comments,
+       alias expansion in non-interactive shells, and other Posix.2 things. */
+    if (posixly_correct)
+    {
+        bind_variable("POSIXLY_CORRECT", "y", 0);
+        sv_strict_posix("POSIXLY_CORRECT");
+    }
+
+    int should_be_restricted;
+#if defined(RESTRICTED_SHELL)
+    should_be_restricted = shell_is_restricted(shell_name);
+#endif
+#if defined(RESTRICTED_SHELL)
+    initialize_shell_options(privileged_mode || restricted || should_be_restricted || running_setuid);
+  initialize_bashopts(privileged_mode || restricted || should_be_restricted || running_setuid);
+#else
+    initialize_shell_options(privileged_mode || running_setuid);
+    initialize_bashopts(privileged_mode || running_setuid);
+#endif
+
+    set_default_lang();
+
+    set_default_locale_vars();
+
+    /* If we are invoked as `sh', turn on Posix mode. */
+    if (act_like_sh)
+    {
+        bind_variable("POSIXLY_CORRECT", "y", 0);
+        sv_strict_posix("POSIXLY_CORRECT");
+    }
+
+    cmd_init(); /* initialize the command object caches */
+
+    uwp_init();
+
+    return 0;
+}
+
+// libbash - tells the shell which file to read the commands from
+// returns file descriptor of file on success, negative on failure
+int set_bash_file(char *filename)
+{
+    // it seems like when multiple calls to bash_to_ast are made in the same process
+    // the line number is not reset, so we do it here
+    line_number = 0;
+    EOF_Reached = 0; // same for EOF_Reached
+
+    reset_parser();
+
+    shell_script_filename = filename;
+    int open_sh = open_shell_script(filename);
+    if (open_sh < 0)
+        return open_sh;
+
+    set_bash_input(); // seems neccesary based on comments
+    return 0;
+}
+
 static int
 parse_long_options (argv, arg_start, arg_end)
      char **argv;

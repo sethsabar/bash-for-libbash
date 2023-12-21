@@ -52,7 +52,7 @@ INSTALL_DATA = @INSTALL_DATA@
 INSTALLMODE= -m 0755
 
 @SET_MAKE@
-CC = @CC@
+CC = @CC@ -fPIC # libbash add -fPIC
 RM = rm -f
 
 SHELL = @MAKE_SHELL@
