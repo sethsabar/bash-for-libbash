@@ -872,7 +872,12 @@ int initialize_shell_libbash(void)
     initialize_bashopts(privileged_mode || running_setuid);
 #endif
 
-    shell_initialize();
+    if (shell_initialized) {
+      shell_reinitialize();
+    } else {
+      shell_initialize();
+      shell_initialized = 1;
+    }
 
     set_default_lang();
 
